@@ -3,14 +3,8 @@
 
 
 ## 1、下载解压
-
-链接中下载最新包
-
-[github下载]: https://github.com/docker/docker-ce/tags
-
-
-
 ```
+https://github.com/docker/docker-ce/tags 
 tar -zxvf docker-ce-19.03.5.tar.gz
 ```
 
