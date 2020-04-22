@@ -1,0 +1,67 @@
+/license/logs/license_cloud_logs/*.log {
+    daily  # 指定转储周期为每天
+	rotate 7  # 指定日志文件删除之前转储的次数，0 指没有备份，7指保留7个备份
+	copytruncate  # 用于还在打开中的日志文件，把当前日志备份并截断
+    dateext  # 使用日期作为命名格式
+    compress  # 通过gzip压缩转储以后的日志
+	delaycompress  # 和 compress 一起使用时，转储的日志文件到下一次转储时才压缩
+	missingok  # 在日志轮循期间，任何错误将被忽略，例如“文件无法找到”之类的错误。
+}
+
+
+
+/license/api-gateway-backend-1.1.0/1.1.0/logs/gateway.jar/service.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/gateway.jar/gateway.access.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/basic.ja/service.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/basic.ja/dubbo.access.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/config.jar/service.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/config.jar/dubbo.access.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/openapi.jar/service.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/openapi.jar/dubbo.access.*.log
+/license/api-gateway-backend-1.1.0/1.1.0/logs/portal.jar/service.*.log
+{
+    daily
+    rotate 7
+    dateext
+    nocreate
+    compress
+    delaycompress
+    missingok
+}
+
+
+/license/logs/nginx/*.log {
+    daily
+	rotate 7
+    dateext
+    compress
+	delaycompress
+	missingok
+	sharedscripts
+    postrotate
+		if [ -f /var/run/nginx.pid ];then
+			kill -USR1 `cat /var/run/nginx.pid`
+		fi
+    endscript
+}
+----------------------------------
+
+vi /etc/logrotate.d/tomcat-log-cut
+# 每天切割一次，并保留100个旧的切割，切割后的文档保存到：/data/TEST-01-BACKEND/MALL/MALL-WEB-Serice-8000/logs/archives 目录下。
+/data/TEST-01-BACKEND/MALL/MALL-WEB-Serice-8000/logs/catalina.out {
+	daily        # 按天切割
+	# create mode owner group #轮转时指定创建新文件的属性
+    notifempty   # 日志是空的就不轮替
+    copytruncate # 轮替时候先拷贝日志，备份拷贝文件，在清空本来的文件
+	# 配置了它以后，操作方式是把 Catalina.out 复制一份 成为 Catalina.out.1，然后清空 log 的内容，使大小为0，那此时 log 依然时原来的旧 		  log，对进程（tomcat）来说，依然打开的是原来的文件描述符，可以继续往里面写日志，而不用发送信号给 tomcat
+	# copytruncate 这种方式操作的时候， 拷贝和清空之间有一个时间差，可能会丢失部分日志数据。
+    rotate 100   # 轮替最多保留之前的数据几次
+    missingok    # 如果日志丢失，不报错继续滚动下一个日志
+    compress     # 日志轮替时候对旧日志就行 gzip 压缩
+    dateext      # 使用当前日期命名旧日志
+    dateformat .%Y%m%d-%H  # 对日期进行格式定制
+	#size 100M   # 大小到达 size 开始转存
+    olddir /data/TEST-01-BACKEND/MALL/MALL-WEB-Serice-8000/logs/archives   # 轮替后日志文件放入指定的目录
+}
+# 执行命令测试
+/usr/sbin/logrotate -v -f -d /etc/logrotate.d/tomcat-log-cut
