@@ -193,24 +193,29 @@ systemctl enable --now kubelet
 ```
 
 1、安装keepalived和haproxy
+```
 yum install haproxy keepalived -y
 mkdir /etc/haproxy
 systemctl enable --now haproxy
 systemctl enable --now keepalived
-
+```
 2、生成初始化配置文件
+```
 cd /root/K8S
 kubeadm config print init-defaults > kubeadm-config.yaml
+```
 
 配置文件解释：
+```
 controlPlaneEndpoint：为vip地址和haproxy监听端口6443
 imageRepository:由于国内无法访问google镜像仓库k8s.gcr.io，这里指定为阿里云镜像仓库registry.aliyuncs.com/google_containers
 podSubnet:指定的IP地址段与后续部署的网络插件相匹配，这里需要部署flannel插件，所以配置为10.244.0.0/16
 mode: ipvs:最后追加的配置为开启ipvs模式。
-
+```
 3、拉取镜像
+```
 kubeadm  config images pull  --config kubeadm-config.yaml  # 通过阿里源预先拉镜像
-
+```
 4、节点 初始化
 ```
 kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kubeadm-init.log
