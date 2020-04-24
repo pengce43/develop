@@ -1,0 +1,51 @@
+---
+- hosts: cluster
+  vars:
+    kafka1: 10.253.39.183
+    kafka2: 10.253.39.184
+    kafka3: 10.253.39.185
+    brokerid1: 183
+    brokerid2: 184
+    brokerid3: 185
+    zk_conn: 10.253.39.183:2182,10.253.39.184:2182,10.253.39.185:2182
+    log_dir: /home/didp/kafka/kafka-logs
+  tasks:
+    - name: create kafka directory
+      file: 
+        path: '{{ item }}' 
+        state: directory
+      with_items:
+        - /home/didp/kafka
+        - /home/didp/kafka/kafka-logs
+    - name: copy kafka package
+      copy: src=./kafka_2.11-2.1.0.tgz dest=/root
+
+    - name: unarchive kafka
+      unarchive: src=/root/kafka_2.11-2.1.0.tgz dest=/home/didp/kafka copy=no
+
+    - name: Config kafka1
+      template:
+        src: server1.properties.j2
+        dest: /home/didp/kafka/kafka_2.11-2.1.0/config/server.properties
+        mode: 0644
+      when: ansible_default_ipv4.address == "10.253.39.183"
+
+    - name: Config kafka2
+      template:
+        src: server2.properties.j2
+        dest: /home/didp/kafka/kafka_2.11-2.1.0/config/server.properties
+        mode: 0644
+      when: ansible_default_ipv4.address == "10.253.39.184"
+
+    - name: Config kafka3
+      template:
+        src: server3.properties.j2
+        dest: /home/didp/kafka/kafka_2.11-2.1.0/config/server.properties
+        mode: 0644
+      when: ansible_default_ipv4.address == "10.253.39.185"
+
+    - name: Change directory property
+      shell: chown -R didp:didp /home/didp/kafka
+
+    - name: Start kafka service
+      shell: runuser -l didp -c "cd /home/didp/kafka/kafka_2.11-2.1.0/bin && nohup sh kafka-server-start.sh ../config/server.properties &"
