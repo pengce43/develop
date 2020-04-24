@@ -72,9 +72,11 @@ ansible master -m shell -a 'sysctl -p /etc/sysctl.d/k8s.conf'
 ```
 
 6、时间同步:
+```
 ansible master -m yum -a "name=ntpdate state=latest" 
 ansible master -m cron -a "name='k8s cluster crontab' minute=*/30 hour=* day=* month=* weekday=* job='ntpdate time7.aliyun.com >/dev/null 2>&1'"
 ansible master -m shell -a "ntpdate time7.aliyun.com"
+```
 
 7、安装docker-ce:
 
@@ -101,14 +103,14 @@ EOF
 8、加载ipvs模块
 
 # 加载 ipvs 相关内核模块
-
+```
 modprobe ip_vs
 modprobe ip_vs_rr
 modprobe ip_vs_wrr
 modprobe ip_vs_sh
 modprobe nf_conntrack_ipv4
 modprobe br_netfilter
-
+```
 加入开机启动中
 
 ```
@@ -210,6 +212,7 @@ mode: ipvs:最后追加的配置为开启ipvs模式。
 kubeadm  config images pull  --config kubeadm-config.yaml  # 通过阿里源预先拉镜像
 
 4、节点 初始化
+```
 kubeadm init --config=kubeadm-config.yaml --experimental-upload-certs | tee kubeadm-init.log
 启动报错解决：https://blog.csdn.net/boling_cavalry/article/details/91306095
 
@@ -218,3 +221,4 @@ node节点加入集群
 
 查看kubelet的日志：
 journalctl -f -u kubele
+```
