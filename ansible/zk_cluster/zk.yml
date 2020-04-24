@@ -1,0 +1,40 @@
+---
+- hosts: cluster
+  vars:
+    zk1server: 10.253.39.183
+    zk2server: 10.253.39.184
+    zk3server: 10.253.39.185
+    zk1myid: 183
+    zk2myid: 184
+    zk3myid: 185
+    zkdata_dir: /home/didp/zk/data
+    zklog_dir: /home/didp/zk/log
+  tasks:
+    - name: Create log、data directory
+      file: 
+        path: '{{ item }}'
+        state: directory
+      with_items:
+        - '{{ zkdata_dir }}'
+        - '{{ zklog_dir }}'
+
+    - name: copy zookeeper package to dest dir /root
+      copy: src=./zookeeper-3.4.13.tar.gz dest=/root
+    
+    - name: unarchive zk package
+      unarchive: src=/root/zookeeper-3.4.13.tar.gz dest=/home/didp/zk copy=no 
+  
+    - name: Config zk myid
+      shell: ifconfig | grep "10.253.39" | awk '{print $2}' | cut -d '.' -f 4 > /home/didp/zk/data/myid
+
+    - name: Config zookeeper service
+      template:
+        src: zoo.cfg.j2
+        dest: /home/didp/zk/zookeeper-3.4.13/conf/zoo.cfg
+        mode: 0755
+
+    - name: Change directory property
+      shell: chown -R didp:didp /home/didp/zk
+    
+    - name: Start ZooKeeper service
+      shell: runuser -l didp -c "cd /home/didp/zk/zookeeper-3.4.13/bin && ./zkServer.sh start"
