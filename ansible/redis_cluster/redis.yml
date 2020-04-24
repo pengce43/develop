@@ -1,0 +1,82 @@
+  ---
+  - hosts: cluster
+    vars: 
+      port: 7000
+      listen1: 10.253.39.183
+      listen2: 10.253.39.184
+      listen3: 10.253.39.185
+      data_dir: /home/didp/redis/redis_cluster/data
+      authpwd: passwd123
+    tasks:
+      - name: batch create directory
+        file:
+          path: '{{ item }}'
+          state: directory
+          owner: didp
+          group: didp
+        with_items:
+          - /home/didp/redis/redis_cluster
+          - '{{ data_dir }}'
+          - /home/didp/redis/redis_cluster/{{ port1 }}
+          - /home/didp/redis/redis_cluster/{{ port2 }}
+
+      - name: install dependency
+        yum:
+          name: '{{ item }}'
+          state: present
+        with_items:
+          - gcc
+          - tcl
+          - make
+          - gcc-c++
+
+      - name: copy file
+        copy: src=/root/redis-4.0.2.tar.gz dest=/home/didp/redis/redis_cluster
+
+      - name: unarchive redis
+        shell: chdir=/home/didp/redis/redis_cluster tar -zxf redis-4.0.2.tar.gz
+      - name: install redis
+        shell: cd /home/didp/redis/redis_cluster/redis-4.0.2 && make MALLOC=libc PREFIX=/home/didp/redis/redis_cluster install
+
+      - name: check bin num
+        shell: chdir=/home/didp/redis/redis_cluster ls -d bin|wc -l
+        register: result
+
+      - name: copy file redis-trib.rb to bin
+        shell: chdir=/home/didp/redis/redis_cluster cp redis-4.0.2/src/redis-trib.rb bin
+        when: result.stdout == '1'
+
+      - name: Config redis1
+        template: 
+          src: ./redis1.conf.j2 
+          dest: /home/didp/redis/redis_cluster/7000/redis.conf
+          mode: 0755
+        when: ansible_default_ipv4.address == "10.253.39.183"
+
+      - name: Config redis2
+        template: 
+          src: ./redis2.conf.j2 
+          dest: /home/didp/redis/redis_cluster/7000/redis.conf
+          mode: 0755
+        when: ansible_default_ipv4.address == "10.253.39.184"
+
+      - name: Config redis3
+        template: 
+          src: ./redis3.conf.j2 
+          dest: /home/didp/redis/redis_cluster/7000/redis.conf
+          mode: 0755
+        when: ansible_default_ipv4.address == "10.253.39.185"
+
+      - name: Config 7001
+        shell: chdir=/home/didp/redis/redis_cluster cp 7000/redis.conf 7001 && sed -i 's/7000/7001/g' 7001/redis.conf
+      
+      - name: change property 
+        shell: chown -R didp:didp /home/didp/redis
+
+      - name: start redis7000
+        shell: runuser -l didp -c "cd /home/didp/redis/redis_cluster && ./bin/redis-server 7000/redis.conf &"
+      - name: start redis7001
+        shell: runuser -l didp -c "cd /home/didp/redis/redis_cluster && ./bin/redis-server 7001/redis.conf &"
+      
+      - name: delete redis packages
+        shell: chdir=/home/didp/redis/redis_cluster rm -rf redis-4.0.2*
