@@ -1,0 +1,37 @@
+# emptyDir: 空目录,这种存储卷会随着Pod的删除而被清空，它一般作为缓存目录使用，或临时目录
+# https://www.cnblogs.com/wn1m/p/11288671.html
+
+# emptyDir存储卷的示例:
+# pod中有两个container挂载同一个emptyDir，nginx提供web服务，busybox则循环向挂载目录下的index.html文件写入数据
+vim  pod-volume.yaml
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: pod-emptydir
+  namespace: default
+  labels:
+    app: myapp
+    release: test
+spec:
+  containers:
+    - name: myapp
+      image: ikubernetes/myapp:v1
+      ports:
+        - name: myapp
+          containerPort: 80
+      volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+    - name: busybox
+      image: busybox:latest
+      volumeMounts:
+        - name: html
+          mountPath: /data
+      command:
+        - "/bin/sh"
+        - "-c"
+        - "while true; do echo $(date) >> /data/index.html; sleep 2; done"
+
+  volumes:
+    - name: html
+      emptyDir: {}
