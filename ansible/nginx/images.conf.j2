@@ -1,0 +1,11 @@
+server {
+	listen       18080 ;  # 端口可修改
+	#server_name  _;
+	# Load configuration files for the default server block.
+
+	location / {
+	  root   {{ images_dir }};   # 此目录为证照云存放静态文件的目录，和apollo上进行统一
+          #autoindex on;
+          expires 24h;
+	}
+}

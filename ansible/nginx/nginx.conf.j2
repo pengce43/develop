@@ -1,0 +1,48 @@
+#user  root;
+worker_processes  auto;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+#一个nginx进程打开的最多文件描述符数目
+worker_rlimit_nofile 1024000;
+
+events {
+    worker_connections  1024000;
+}
+http {
+    server_tokens off;
+    include       mime.types;
+    default_type  application/octet-stream;
+    charset utf-8;
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" $http_host $upstream_addr'
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x-upstream"';
+
+    #access_log  logs/access.log  main;
+
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout  10m;
+
+    client_max_body_size 40m;
+    #开启sendfile高效传输文件的模式  默认关闭
+    sendfile        on;
+    #tcp_nopush     on;
+
+
+    #不允许客户端主动关闭连接,如果该项为设置在nginx的日志中可能出现499 错误
+    proxy_ignore_client_abort on;
+    #配置客户端连接超时时间
+    keepalive_timeout  65;
+    keepalive_requests 20000;
+
+    gzip  on;
+    #大于1k才压缩
+    gzip_min_length 1k;
+    #压缩等级 1-9 ,越高越耗cpc
+    gzip_comp_level 1;
+	include {{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/conf.d/*.conf;
+}

@@ -1,0 +1,145 @@
+server {
+	listen       18000;
+	#charset koi8-r;
+	# 证照云web-front
+	location ^~ /front/ {
+		error_log logs/front_error.log    error;
+		access_log logs/front_access.log  main;
+		proxy_pass http://{{ web_front_addr }}:8188/;    #反代到 license-blockchain-web-gateway工程
+		proxy_redirect     off;
+		proxy_set_header   Host             $host;
+		proxy_set_header   X-Real-IP        $remote_addr;
+		proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+		client_max_body_size    10m; 
+		client_body_buffer_size 1280k;
+		proxy_connect_timeout   900;   
+		proxy_send_timeout      900;  
+		proxy_read_timeout      900;   
+		proxy_buffer_size       40k;   
+		proxy_buffers           40 320k;
+		proxy_busy_buffers_size 640k;  
+		proxy_temp_file_write_size 640k;
+		# 20200512 添加跨域问题解决
+		add_header 'Access-Control-Allow-Origin' '*';
+		add_header 'Access-Control-Allow-Headers' 'X-Requested-With';
+		add_header 'Access-Control-Allow-Methods' 'GET,POST,OPTIONS';
+		# 由于跨域请求，浏览器会先发送一个OPTIONS的预检请求，我们可以缓存第一次的预检请求的失效时间
+		if ($request_method = 'OPTIONS') {
+				add_header 'Access-Control-Max-Age' 2592000;
+				add_header 'Content-Type' 'text/plain; charset=utf-8';
+				add_header 'Content-Length' 0;
+		return 204;
+		}
+    }
+	
+	# 证照云core
+	location  ^~ /api-gateway/gateway/ {
+		error_log logs/core_error.log    error;
+		access_log logs/core_access.log  main;
+		proxy_pass http://{{ cloud_core_addr }}:8088/api-gateway/gateway/;
+		add_header Access-Control-Allow-Origin  *;
+		add_header Access-Control-Allow-Headers X-Requested-With;
+		add_header Access-Control-Allow-Methods GET,POST,OPTIONS;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "";
+		proxy_set_header Host  $Host;
+		proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header X-Real-IP $remote_addr;
+		add_header X-Upstream $upstream_addr always;
+	}
+	
+	# 证照云web-admin
+	location  ^~ /web-admin/ {
+		error_log logs/web-admin_error.log    error;
+		access_log logs/web-admin_access.log  main;
+		proxy_pass http://{{ web_admin_addr }}:8888/web-admin/;  # 反代到 license-cloud-web-admin工程
+		proxy_http_version 1.1;
+		proxy_set_header Connection "";
+		proxy_set_header Host  $Host;
+		proxy_set_header X-Forwarded-For "$proxy_add_x_forwarded_for, $server_addr";
+		proxy_set_header X-Real-IP $remote_addr;
+		add_header X-Upstream $upstream_addr always;
+		add_header 'Access-Control-Allow-Origin' '*';
+		add_header 'Access-Control-Allow-Methods' 'OPTIONS, GET, POST, PUT, PATCH, DELETE';
+		add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+		add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+	}
+	
+	# 证照云web-gateway
+	location  ^~ /web-gateway/ {
+		error_log logs/web-gateway_error.log    error;
+		access_log logs/web-gateway_access.log  main;
+		proxy_pass http://{{ web_gateway_addr }}:8881/;  # 反代到 license-blockchain-web-gateway工程
+		proxy_http_version 1.1;
+		proxy_set_header Connection "";
+		proxy_set_header Host  $Host;
+		proxy_set_header X-Forwarded-For "$proxy_add_x_forwarded_for, $server_addr";
+		proxy_set_header X-Real-IP $remote_addr;
+		add_header X-Upstream $upstream_addr always;
+		add_header 'Access-Control-Allow-Origin' '*';
+		add_header 'Access-Control-Allow-Methods' 'OPTIONS, GET, POST, PUT, PATCH, DELETE';
+		add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+		add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+	}
+	# 帮助与反馈
+	location ^~ /feedback/ {
+		proxy_pass http://{{ web_front_addr }}:8188/feedback/;
+		proxy_set_header Host  $Host;
+		proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header X-Real-IP $remote_addr;
+		add_header X-Upstream $upstream_addr always;
+	}
+	location ^~/bizForm/ {
+		proxy_pass http://{{ web_front_addr }}:8188/bizForm/;
+		proxy_set_header Host  $Host;
+		proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header X-Real-IP $remote_addr;
+		add_header X-Upstream $upstream_addr always;
+	}
+	#静态图片网关/协议
+	location ^~ /images/ {
+		error_log logs/images_error.log    error;
+		access_log logs/images_access.log  main;
+		proxy_pass http://{{ images_addr }}:18080/;   
+		proxy_set_header Host  $Host;
+		proxy_set_header X-Forwarded-For $remote_addr;
+		proxy_set_header X-Real-IP $remote_addr;
+		add_header X-Upstream $upstream_addr always;
+	}
+	# 签章工程
+	location ^~ /signature/ {
+			error_log logs/signature_error.log    error;
+			access_log logs/signature_access.log  main;
+			proxy_pass http://{{ images_addr }}:18080/signature/;
+			proxy_redirect     off;
+			proxy_set_header   Host             $host;
+			proxy_set_header   X-Real-IP        $remote_addr;
+			proxy_set_header   X-Forwarded-For  $proxy_add_x_forwarded_for;
+			add_header 'Access-Control-Allow-Origin' '*';
+			add_header 'Access-Control-Allow-Methods' 'OPTIONS, GET, POST, PUT, PATCH, DELETE';
+			add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+			client_max_body_size    10m;
+			client_body_buffer_size 1280k;
+			proxy_connect_timeout   900;
+			proxy_send_timeout      900;
+			proxy_read_timeout      900;
+			proxy_buffer_size       40k;
+			proxy_buffers           40 320k;
+			proxy_busy_buffers_size 640k;
+			proxy_temp_file_write_size 640k;
+	}
+	# H5工程
+	location /eLicenseMobile/ {
+		add_header  Access-Control-Allow-Origin     *;
+		add_header  Access-Control-Allow-Credentials  false;
+		add_header  Access-Control-Allow-Methods    *;
+		add_header Content-Security-Policy "connect-src *";
+		expires off;
+		alias eLicenseMobile/;
+		access_log   logs/eLicenseMobile.log;
+	}
+	# apollo
+	location / {
+		proxy_pass http://{{ apollo_addr }}:8070/;
+	}
+}
