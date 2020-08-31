@@ -1,0 +1,106 @@
+---
+- hosts: nginx
+  gather_facts: true
+  vars:
+    nginx_user: ecezt
+    nginx_version: tengine-2.3.2
+    nginx_install_path: /data1
+    images_dir: /data1/ecezt/images    # 证照云静态文件存放地址
+    cloud_core_addr: 192.168.216.6     # 证照云core工程部署主机
+    web_front_addr: 192.168.216.6      # 证照云web-front工程部署主机
+    web_admin_addr: 192.168.216.6      # 证照云web-admin工程部署主机
+    web_gateway_addr: 192.168.216.6    # 证照云web-gateway工程部署主机
+    images_addr: 192.168.216.6         # 静态资源nginx部署主机
+    entry_addr: 192.168.216.7          # 程序总入口nginx部署主机
+  tasks:
+    - name: install_dependency_packages
+      yum:
+        name: "{{ item }}"
+      with_items:
+        - gcc
+        - gcc-c++
+        - openssl-devel
+        - pcre-devel
+        - zlib-devel
+
+    #- name: add_nginx_user
+    #  user:
+    #    name: "{{ nginx_user }}"
+    #    createhome: yes
+
+    - name: copy_file_to_remote
+      copy:
+        src: "{{ nginx_version }}.tar.gz"
+        dest: "{{ nginx_install_path }}/{{ nginx_user }}"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+
+    - name: unarchive_nginx
+      unarchive:
+        src: "{{ nginx_install_path }}/{{ nginx_user }}/{{ nginx_version }}.tar.gz"
+        dest: "{{ nginx_install_path }}/{{ nginx_user }}"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+        copy: no
+
+    - name: create_nginx_{{ nginx_install_path }}_directory
+      file:
+        path: "{{ nginx_install_path }}/{{ nginx_user }}/nginx"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+        state: directory
+
+    - name: init_nginx
+      shell: runuser -l {{ nginx_user }} -c "cd {{ nginx_install_path }}/{{ nginx_user }}/{{ nginx_version }} && ./configure --prefix={{ nginx_install_path }}/{{ nginx_user}}/nginx --user={{ nginx_user }} --with-http_stub_status_module --with-http_ssl_module --with-pcre"
+
+    - name: install_nginx
+      shell: runuser -l {{ nginx_user }} -c "cd {{ nginx_install_path }}/{{ nginx_user }}/{{ nginx_version }} && make && make install"
+
+    - name: create_nginx_conf.d_directory
+      file:
+        path: "{{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/conf.d"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+        state: directory
+
+    - name: copy_nginx_config_file
+      template:
+        src: nginx.conf.j2
+        dest: "{{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/nginx.conf"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+    
+    - name: touch_gateway.conf_in_conf.d
+      file:
+        path: "{{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/conf.d/gateway.conf"
+        state: touch
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+      when: ansible_default_ipv4.address == "{{  entry_addr }}"
+      
+    - name: touch_images.conf_in_conf.d
+      file:
+        path: "{{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/conf.d/images.conf"
+        state: touch
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+      when: ansible_default_ipv4.address == "{{ images_addr }}"
+      
+    - name: copy_gateway.conf_file_to_conf.d
+      template: 
+        src: gateway.conf.j2
+        dest: "{{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/conf.d/gateway.conf"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+      when: ansible_default_ipv4.address == "{{  entry_addr }}"
+
+    - name: copy_images.conf_file_to_conf.d
+      template: 
+        src: images.conf.j2
+        dest: "{{ nginx_install_path }}/{{ nginx_user }}/nginx/conf/conf.d/images.conf"
+        owner: "{{ nginx_user }}"
+        group: "{{ nginx_user }}"
+      when: ansible_default_ipv4.address == "{{ images_addr }}"
+         
+    - name: start_nginx
+      shell: runuser -l {{ nginx_user }} -c "{{ nginx_install_path }}/{{ nginx_user }}/nginx/sbin/nginx"
