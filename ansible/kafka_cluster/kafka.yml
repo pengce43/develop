@@ -1,0 +1,59 @@
+---
+- hosts: cluster
+  vars:
+    kafka_version: kafka_2.11-2.1.0   # kafka版本
+    kafka1: 19.129.242.199            # kafka集群部署主机
+    kafka2: 19.129.242.200
+    kafka3: 19.129.242.201
+    brokerid1: 199                    # kafka brokerid，取ip地址的最后一段
+    brokerid2: 200
+    brokerid3: 201
+    deploy_user: ecezt                # 部署kafka集群用到的用户   
+    deploy_dir: /data/ecezt/kafka     # kafka部署路径
+    log_dir: /data/ecezt/kafka/kafka-logs  # 日志存储路径
+    zk_conn: 19.129.242.199:2181,19.129.242.200:2181,19.129.242.201:2181  # zookeeper连接地址
+  tasks:
+    - name: create kafka directory
+      file: 
+        path: '{{ item }}' 
+        state: directory
+      with_items:
+        - "{{ deploy_dir }}"
+        - "{{ log_dir }}"
+    - name: copy kafka package
+      copy: 
+        src: "./{{ kafka_version }}.tgz"
+        dest: /root
+
+    - name: unarchive kafka
+      unarchive: 
+        src: "/root/{{ kafka_version }}.tgz"
+        dest: "{{ deploy_dir }}" 
+        copy: no
+
+    - name: Config kafka1
+      template:
+        src: server1.properties.j2
+        dest: "{{ deploy_dir }}/{{ kafka_version }}/config/server.properties"
+        mode: 0644
+      when: ansible_default_ipv4.address == "19.129.242.199"
+
+    - name: Config kafka2
+      template:
+        src: server2.properties.j2
+        dest: "{{ deploy_dir }}/{{ kafka_version }}/config/server.properties"
+        mode: 0644
+      when: ansible_default_ipv4.address == "19.129.242.200"
+
+    - name: Config kafka3
+      template:
+        src: server3.properties.j2
+        dest: "{{ deploy_dir }}/{{ kafka_version }}/config/server.properties"
+        mode: 0644
+      when: ansible_default_ipv4.address == "19.129.242.201"
+
+    - name: Change directory property
+      shell: chown -R "{{ deploy_user }}":"{{ deploy_user }}" "{{ deploy_dir }}"
+
+    - name: Start kafka service
+      shell: runuser -l "{{ deploy_user }}" -c "cd {{ deploy_dir }}/{{ kafka_version }}/bin && nohup sh kafka-server-start.sh ../config/server.properties &"
