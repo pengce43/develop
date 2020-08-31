@@ -7,12 +7,12 @@ initLimit=10
 # sending a request and getting an acknowledgement
 syncLimit=5
 # the directory where the snapshot is stored.
-# /home/didp/zk/data
+# /data1/ecezt/zk/data
 dataDir={{ zkdata_dir }}
-# /home/didp/zk/log
+# /data1/ecezt/zk/log
 dataLogDir={{ zklog_dir }}
 # the port at which the clients will connect
-clientPort=2182
-server.{{ zk1myid }}={{ zk1server}}:2999:3999
-server.{{ zk2myid }}={{ zk2server}}:2999:3999
-server.{{ zk3myid }}={{ zk3server}}:2999:3999
+clientPort=2181
+server.{{ zk1myid }}={{ zk1server}}:2888:3888
+server.{{ zk2myid }}={{ zk2server}}:2888:3888
+server.{{ zk3myid }}={{ zk3server}}:2888:3888
