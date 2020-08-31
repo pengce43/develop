@@ -1,14 +1,17 @@
 ---
 - hosts: cluster
   vars:
-    zk1server: 10.253.39.183
-    zk2server: 10.253.39.184
-    zk3server: 10.253.39.185
-    zk1myid: 183
-    zk2myid: 184
-    zk3myid: 185
-    zkdata_dir: /home/didp/zk/data
-    zklog_dir: /home/didp/zk/log
+    zk_version: zookeeper-3.4.13      # zookeeper版本
+    zk1server: 19.129.242.199         # 部署zk集群的主机
+    zk2server: 19.129.242.200         
+    zk3server: 19.129.242.201 
+    zk1myid: 199                      # zkmyid，此为截取IP段的最后一位
+    zk2myid: 200
+    zk3myid: 201
+    deploy_user: ecezt                # 部署使用的用户
+    deploy_dir: /data/ecezt           # 部署路径
+    zkdata_dir: /data/ecezt/zk/data   # 数据存储路径，和部署路径保持一致
+    zklog_dir: /data/ecezt/zk/log     # 日志存储路径，和部署路径保持一致
   tasks:
     - name: Create log、data directory
       file: 
@@ -19,22 +22,27 @@
         - '{{ zklog_dir }}'
 
     - name: copy zookeeper package to dest dir /root
-      copy: src=./zookeeper-3.4.13.tar.gz dest=/root
+      copy: 
+        src: ./{{ zk_version }}.tar.gz 
+        dest: /root
     
     - name: unarchive zk package
-      unarchive: src=/root/zookeeper-3.4.13.tar.gz dest=/home/didp/zk copy=no 
+      unarchive: 
+        src: "/root/{{ zk_version }}.tar.gz"
+        dest: "{{ deploy_dir }}/zk"
+        copy: no 
   
     - name: Config zk myid
-      shell: ifconfig | grep "10.253.39" | awk '{print $2}' | cut -d '.' -f 4 > /home/didp/zk/data/myid
+      shell: hostname -I | awk '{print $1}' | cut -d '.' -f 4 > "{{ deploy_dir }}"/zk/data/myid
 
     - name: Config zookeeper service
       template:
         src: zoo.cfg.j2
-        dest: /home/didp/zk/zookeeper-3.4.13/conf/zoo.cfg
+        dest: "{{ deploy_dir }}/zk/{{ zk_version }}/conf/zoo.cfg"
         mode: 0755
 
     - name: Change directory property
-      shell: chown -R didp:didp /home/didp/zk
+      shell: chown -R "{{ deploy_user }}":"{{ deploy_user }}" "{{ deploy_dir }}"/zk
     
     - name: Start ZooKeeper service
-      shell: runuser -l didp -c "cd /home/didp/zk/zookeeper-3.4.13/bin && ./zkServer.sh start"
+      shell: runuser -l "{{ deploy_user }}" -c "cd {{ deploy_dir }}/zk/{{ zk_version }}/bin && ./zkServer.sh start"
