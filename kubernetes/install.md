@@ -102,7 +102,7 @@ EOF
 
 8、加载ipvs模块
 
-# 加载 ipvs 相关内核模块
+加载 ipvs 相关内核模块
 ```
 modprobe ip_vs
 modprobe ip_vs_rr
