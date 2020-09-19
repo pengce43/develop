@@ -51,8 +51,8 @@ services:
      # - "./kafka1/logs:/opt/kafka/logs"     # kafka日志持久化到宿主机
     environment:
       KAFKA_ADVERTISED_HOST_NAME: 192.168.5.111                     ## 修改:宿主机IP
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.5.111:9092        ## 修改:宿主机IP
-      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181,zoo2:2181,zoo3:2181"    ## 修改zk连接地址
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.5.111:9092    ## 修改:宿主机IP
+      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181,zoo2:2181,zoo3:2181"      ## 修改zk连接地址
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_BROKER_ID: 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -71,7 +71,7 @@ services:
     environment:
       KAFKA_ADVERTISED_HOST_NAME: 192.168.5.111                         ## 修改:宿主机IP
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.5.111:9093        ## 修改:宿主机IP
-      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181,zoo1:2182,zoo3:2181"     ## 修改zk连接地址
+      KAFKA_ZOOKEEPER_CONNECT: "zoo1:2181,zoo1:2182,zoo3:2181"          ## 修改zk连接地址
       KAFKA_ADVERTISED_PORT: 9093
       KAFKA_BROKER_ID: 2
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -108,7 +108,7 @@ services:
     environment:
         ZK_HOSTS: 192.168.5.111                   ## 修改:宿主机IP
     ports:
-      - "19000:9000"                               ## 暴露端口
+      - "19000:9000"                              ## 暴露端口
     networks: 
       - zk_kakfa
 
