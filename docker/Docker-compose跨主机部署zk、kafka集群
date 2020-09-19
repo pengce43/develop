@@ -1,0 +1,141 @@
+# 跨主机部署zk、kafka集群
+# 主机 192.168.5.111上
+version: '3'
+services:
+  zookeeper1:
+    container_name: zookeeper1
+    hostname: zookeeper1
+    image: zookeeper:3.4.14
+    restart: always
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+    extra_hosts:
+      - "zookeeper1:192.168.5.111"
+      - "zookeeper2:192.168.5.112"
+      - "zookeeper3:192.168.5.113"
+      - "kafka1:192.168.5.111"
+      - "kafka2:192.168.5.112"
+      - "kafka3:192.168.5.113"
+
+  kafka1:
+    container_name: kafka1
+    hostname: kafka1
+    image: wurstmeister/kafka:2.11-2.0.1
+    restart: always
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.5.111                     ## 修改:宿主机IP
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.5.111:9092    ## 修改:宿主机IP
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper1:2181,zookeeper2:2181,zookeeper3:2181"   ## 修改zk连接地址
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - 9092:9092
+    extra_hosts:
+      - "zookeeper1:192.168.5.111"
+      - "zookeeper2:192.168.5.112"
+      - "zookeeper3:192.168.5.113"
+      - "kafka1:192.168.5.111"
+      - "kafka2:192.168.5.112"
+      - "kafka3:192.168.5.113"
+    depends_on:
+      - zookeeper1
+
+# 主机 192.168.5.112上
+version: '3'
+services:
+  zookeeper2:
+    container_name: zookeeper2
+    hostname: zookeeper2
+    image: zookeeper:3.4.14
+    restart: always
+    environment:
+      - ZOO_MY_ID=2
+      - ZOO_SERVERS=server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+    extra_hosts:
+      - "zookeeper1:192.168.5.111"
+      - "zookeeper2:192.168.5.112"
+      - "zookeeper3:192.168.5.113"
+      - "kafka1:192.168.5.111"
+      - "kafka2:192.168.5.112"
+      - "kafka3:192.168.5.113"
+
+  kafka2:
+    container_name: kafka2
+    hostname: kafka2
+    image: wurstmeister/kafka:2.11-2.0.1
+    restart: always
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.5.112                     ## 修改:宿主机IP
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.5.112:9092    ## 修改:宿主机IP
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper1:2181,zookeeper2:2181,zookeeper3:2181"   ## 修改zk连接地址
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_BROKER_ID: 2
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - 9092:9092
+    extra_hosts:
+      - "zookeeper1:192.168.5.111"
+      - "zookeeper2:192.168.5.112"
+      - "zookeeper3:192.168.5.113"
+      - "kafka1:192.168.5.111"
+      - "kafka2:192.168.5.112"
+      - "kafka3:192.168.5.113"
+    depends_on:
+      - zookeeper2
+
+# 主机 192.168.5.113上
+version: '3'
+services:
+  zookeeper3:
+    container_name: zookeeper3
+    hostname: zookeeper3
+    image: zookeeper:3.4.14
+    restart: always
+    environment:
+      - ZOO_MY_ID=3
+      - ZOO_SERVERS=server.1=zookeeper1:2888:3888 server.2=zookeeper2:2888:3888 server.3=zookeeper3:2888:3888
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+    extra_hosts:
+      - "zookeeper1:192.168.5.111"
+      - "zookeeper2:192.168.5.112"
+      - "zookeeper3:192.168.5.113"
+      - "kafka1:192.168.5.111"
+      - "kafka2:192.168.5.112"
+      - "kafka3:192.168.5.113"
+
+  kafka3:
+    container_name: kafka3
+    hostname: kafka3
+    image: wurstmeister/kafka:2.11-2.0.1
+    restart: always
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.5.113                     ## 修改:宿主机IP
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://192.168.5.113:9092    ## 修改:宿主机IP
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper1:2181,zookeeper2:2181,zookeeper3:2181"   ## 修改zk连接地址
+      KAFKA_ADVERTISED_PORT: 9092
+      KAFKA_BROKER_ID: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - 9092:9092
+    extra_hosts:
+      - "zookeeper1:192.168.5.111"
+      - "zookeeper2:192.168.5.112"
+      - "zookeeper3:192.168.5.113"
+      - "kafka1:192.168.5.111"
+      - "kafka2:192.168.5.112"
+      - "kafka3:192.168.5.113"
+    depends_on:
+      - zookeeper3
